@@ -37,15 +37,15 @@ spec:
           # Health checks - Kubernetes restarts pod if these fail
           livenessProbe:
             httpGet:
-              path: /api/health
+              path: /inventory/health
               port: 8080
-            initialDelaySeconds: 30
+            initialDelaySeconds: 60
             periodSeconds: 10
           readinessProbe:
             httpGet:
-              path: /api/health
+              path: /inventory/health
               port: 8080
-            initialDelaySeconds: 20
+            initialDelaySeconds: 45
             periodSeconds: 5
           resources:
             requests:

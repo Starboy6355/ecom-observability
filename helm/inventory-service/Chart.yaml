@@ -1,6 +1,6 @@
 apiVersion: v2
-name: api-gateway
-description: API Gateway service for ShopSmart eCommerce
+name: inventory-service
+description: Inventory Service for ShopSmart eCommerce
 type: application
 version: 1.0.0
 appVersion: "1.0.0"

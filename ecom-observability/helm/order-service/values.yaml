@@ -1,0 +1,28 @@
+# Default values for api-gateway
+# These can be overridden at deploy time with --set flag
+
+replicaCount: 1
+
+image:
+  repository: your-dockerhub-username/api-gateway
+  tag: "1.0.0"
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 8080
+
+# Resource limits - important for Kubernetes scheduling
+resources:
+  requests:
+    memory: "256Mi"
+    cpu: "100m"
+  limits:
+    memory: "512Mi"
+    cpu: "500m"
+
+# Environment variables passed to the container
+env:
+  ORDER_SERVICE_URL: "http://order-service:8081"
+  INVENTORY_SERVICE_URL: "http://inventory-service:8082"
+  OTEL_COLLECTOR_URL: "http://otel-collector:4318"

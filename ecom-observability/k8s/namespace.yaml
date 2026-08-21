@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ecom
+  labels:
+    # Dynatrace uses this label for management zones
+    app: ecom-observability
+    environment: production

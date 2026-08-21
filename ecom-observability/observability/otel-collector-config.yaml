@@ -1,0 +1,75 @@
+# OTel Collector Configuration
+# This is the ROUTER and PIPELINE for all telemetry data
+# Receives from all 4 services → processes → exports to Dynatrace + Prometheus
+
+receivers:
+  # Receives traces, metrics, logs from all services
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317    # services send traces here via gRPC
+      http:
+        endpoint: 0.0.0.0:4318    # services send traces here via HTTP
+
+processors:
+  # Batch - groups data before sending (more efficient)
+  batch:
+    timeout: 1s
+    send_batch_size: 1024
+
+  # Memory limiter - prevents OTel Collector from using too much RAM
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 256
+
+  # Filter - drops health check traces (they are noise, not useful)
+  filter/drop_health:
+    traces:
+      span:
+        - 'attributes["http.target"] == "/health"'
+        - 'attributes["http.target"] == "/actuator/health"'
+
+  # Attributes - adds environment tag to all telemetry (enrichment)
+  attributes/add_env:
+    actions:
+      - key: environment
+        value: production
+        action: insert
+      - key: team
+        value: platform-engineering
+        action: insert
+
+exporters:
+  # Export to Dynatrace via OTLP
+  otlphttp/dynatrace:
+    endpoint: "${DT_ENDPOINT}/api/v2/otlp"
+    headers:
+      Authorization: "Api-Token ${DT_API_TOKEN}"
+
+  # Export metrics to Prometheus (for Grafana on Oracle VM)
+  prometheus:
+    endpoint: "0.0.0.0:8889"
+
+  # Debug - prints to logs (useful for troubleshooting)
+  debug:
+    verbosity: basic
+
+service:
+  pipelines:
+    # Traces pipeline: receive → filter health checks → add env tag → send to Dynatrace
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, filter/drop_health, attributes/add_env, batch]
+      exporters: [otlphttp/dynatrace, debug]
+
+    # Metrics pipeline: receive → add env tag → send to Dynatrace + Prometheus
+    metrics:
+      receivers: [otlp]
+      processors: [memory_limiter, attributes/add_env, batch]
+      exporters: [otlphttp/dynatrace, prometheus]
+
+    # Logs pipeline: receive → add env tag → send to Dynatrace
+    logs:
+      receivers: [otlp]
+      processors: [memory_limiter, attributes/add_env, batch]
+      exporters: [otlphttp/dynatrace]
